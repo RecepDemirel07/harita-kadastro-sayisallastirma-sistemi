@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique // "MTCHARITA" | "NIL_PROJE" | "TKGM"
+  name        String   // "MTCHARİTA" | "NİL PROJE" | "TKGM"
+  description String
+  users       User[]
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id           Int              @id @default(autoincrement())
+  username     String           @unique
+  email        String           @unique
+  fullName     String
+  passwordHash String
+  isActive     Boolean          @default(true)
+  roleId       Int
+  role         Role             @relation(fields: [roleId], references: [id])
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  auditLogs    AuditLog[]
+  updatedRows  KadastroRecord[]
+}
+
+model GroupMetadata {
+  groupCode      String   @id // "GRUP-1" | "GRUP-2" | "GRUP-3" | "GRUP-4"
+  displayName    String
+  projectTitle   String
+  sourceFileName String?
+  lastImportedAt DateTime?
+  updatedAt      DateTime @updatedAt
+}
+
+model KadastroRecord {
+  id                                    Int      @id @default(autoincrement())
+  groupCode                             String   // "GRUP-1" | "GRUP-2" | "GRUP-3" | "GRUP-4"
+  rowOrder                              Int      @default(0)
+
+  // Sütun A - C (Kimlik / Konum Bilgileri)
+  hizmetBirimi                          String
+  ilcesi                                String
+  mahalleKoy                            String
+
+  // Sütun D - J (Parsel ve Sayısallaştırma Hedef/Ölçüm Sayıları)
+  biriminToplamParselSayisi             Int?
+  iyilestirmeYapilacakParselSayisi      Int?
+  sayisallastirmaYapilacakParselSayisi  Int?
+  entegrasyon                           Int?
+  altlikSayisallastirma                 Int?
+  araziOlcusu                           Int?
+  teslimEdilenParselSayisi              Int?
+
+  // Sütun K - R (Kroki, Pafta ve Rapor Durumları)
+  adaBolumKrokisi                       String?
+  olcuKrokisi                           String?
+  alanVeKoordinatCiktisi                String?
+  pafta1000                             Int?
+  pafta2000                             Int?
+  pafta5000                             Int?
+  paftaCizimi                           String?
+  adaRaporu                             String?
+
+  // Sütun S - Z (Yapılan Parsel Sayıları ve Alan Bilgileri)
+  iyilestirmeYapilanParselSayisi        Int?
+  sayisallastirmaYapilanParselSayisi    Int?
+  ormanParselSayisi                     Int?
+  kesinParselSayisi                     Int?
+  iyilestirmeYapilanParselAlani         Float?
+  sayisallastirmaYapilanParselAlani     Float?
+  ormanParselAlani                      Float?
+  yapilanToplamAlanDonum                Float?
+
+  // Sütun AA - AH (İlan, Komisyon ve Askı Süreçleri)
+  ilaninCikisTarihi                     String?
+  bilgilendirmeIlaniBaslangicTarihi     String?
+  bilgilendirmeIlaniBitisTarihi         String?
+  komisyondakiParselSayisi              Int?
+  kesinAskiTastikTarihi                 String?
+  kesinAskiBaslangicTarihi              String?
+  kesinAskiBitisTarihi                  String?
+  kesinlesmeTarihi                      String?
+
+  // Sütun AI - AK (Yevmiye, Fen Klasörü ve Tescil)
+  yevmiyeVeTarih                        String?
+  fenKlasoruDuzenlenmesi                String?
+  tescilVeDevirIslemi                   String?
+
+  // Sütun AL - AQ (Görevli Personel ve Açıklama)
+  kadastroGorevliMuhendisler            String?
+  kadastroGorevliTeknisyenler           String?
+  tasarrufKontrolMemuru                 String?
+  kadastroUyesi                         String?
+  ormanGorevliMuhendisler               String?
+  aciklama                              String?
+
+  // Sistem & Çakışma Kontrolü (Optimistic Concurrency)
+  version                               Int      @default(1)
+  isUserModified                        Boolean  @default(false)
+  updatedById                           Int?
+  updatedBy                             User?    @relation(fields: [updatedById], references: [id])
+  createdAt                             DateTime @default(now())
+  updatedAt                             DateTime @updatedAt
+
+  @@unique([groupCode, hizmetBirimi, ilcesi, mahalleKoy])
+  @@index([groupCode, rowOrder])
+  @@index([groupCode, ilcesi])
+  @@index([groupCode, hizmetBirimi])
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id])
+  userName    String
+  userRole    String
+  action      String   // "CREATE" | "UPDATE" | "DELETE" | "IMPORT" | "EXPORT"
+  groupCode   String
+  recordId    Int?
+  recordLabel String?
+  changesJson String   // JSON formatında değişen alanlar (eski -> yeni) veya işlem özeti
+  createdAt   DateTime @default(now())
+
+  @@index([groupCode, createdAt])
+  @@index([createdAt])
+}
