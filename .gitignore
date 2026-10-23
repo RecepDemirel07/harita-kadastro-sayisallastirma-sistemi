@@ -6,3 +6,6 @@ out/
 !prisma/seed.db
 *.db-journal
 .DS_Store
+
+.vercel
+.env*

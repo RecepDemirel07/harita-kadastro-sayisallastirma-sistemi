@@ -3,17 +3,17 @@ import path from "path";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { GROUP_CODES, GroupCode } from "./columns";
-import { importExcelRecordsToGroup, ImportMode } from "./excel";
+import { importExcelRecordsToGroup, ImportMode, ImportExecutionResult } from "./excel";
 
 const globalForSeed = globalThis as unknown as {
   __kadastroSeedVerified?: boolean;
-  __kadastroSeedPromise?: Promise<unknown>;
+  __kadastroSeedPromise?: Promise<ImportExecutionResult[]>;
 };
 
 export async function ensureSeedUsersAndData(options?: {
   forceExcelImportMode?: ImportMode;
   targetGroups?: GroupCode[];
-}) {
+}): Promise<ImportExecutionResult[]> {
   // Normal isteklerde başlangıç kontrolü bir kez tamamlandıysa tekrar veritabanı yazma/sayma sorguları çalıştırma
   if (!options?.forceExcelImportMode && !options?.targetGroups && globalForSeed.__kadastroSeedVerified) {
     return [];
@@ -24,7 +24,7 @@ export async function ensureSeedUsersAndData(options?: {
     return globalForSeed.__kadastroSeedPromise;
   }
 
-  const runSeed = async () => {
+  const runSeed = async (): Promise<ImportExecutionResult[]> => {
     // 1. Rolleri oluştur veya güncelle
   const rolesData = [
     {
