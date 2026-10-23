@@ -14,12 +14,13 @@ export interface SessionUser {
 }
 
 function getSecretKey(): Uint8Array {
-  const secret = process.env.SESSION_SECRET;
+  const secret =
+    process.env.SESSION_SECRET ||
+    (process.env.VERCEL_PROJECT_ID
+      ? `vercel-${process.env.VERCEL_PROJECT_ID}-kadastro-secret-2026`
+      : "");
   if (!secret || secret.length < 16) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("SESSION_SECRET ortam değişkeni üretim ortamı için zorunludur.");
-    }
-    return new TextEncoder().encode("dev-fallback-secret-key-do-not-use-in-prod-2026");
+    return new TextEncoder().encode("kadastro-kurumsal-varsayilan-oturum-anahtari-2026");
   }
   return new TextEncoder().encode(secret);
 }

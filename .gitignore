@@ -3,5 +3,6 @@ node_modules/
 out/
 .env
 *.db
+!prisma/seed.db
 *.db-journal
 .DS_Store

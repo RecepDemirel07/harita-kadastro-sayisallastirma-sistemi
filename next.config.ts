@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./prisma/seed.db", "./data/seed-excels/**/*"],
+    "/*": ["./prisma/seed.db", "./data/seed-excels/**/*"],
+  },
   async headers() {
     return [
       {
