@@ -120,7 +120,7 @@ export default function ExcelImportModal({
             <label className="block text-xs font-semibold text-slate-700 mb-2">
               1. Hedef Veri Grubu Seçin
             </label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {GROUP_CODES.map((g) => (
                 <button
                   key={g}

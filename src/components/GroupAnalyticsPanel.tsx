@@ -366,9 +366,9 @@ export default function GroupAnalyticsPanel({
       {!isCollapsed && (
         <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
           {/* Sol Bölüm: Excel Formatında İhale Tamamlanma Tablosu ve İlerleme Çubukları */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="border border-slate-300 rounded-lg overflow-hidden shadow-2xs">
-              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 flex items-center justify-between">
+          <div className="lg:col-span-7 min-w-0 space-y-4">
+            <div className="border border-slate-300 rounded-lg overflow-x-auto shadow-2xs">
+              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 flex flex-col sm:flex-row gap-2 sm:items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 tracking-wide">
                   {groupCode.replace("-", " ")} İHALE ÖZET TABLOSU
                 </span>
@@ -378,7 +378,7 @@ export default function GroupAnalyticsPanel({
                 </span>
               </div>
 
-              <table className="w-full text-xs border-collapse">
+              <table className="w-full text-xs border-collapse [&_td]:px-2 sm:[&_td]:px-4 [&_input]:w-20 sm:[&_input]:w-32">
                 <tbody className="divide-y divide-slate-200">
                   <tr className="bg-white hover:bg-slate-50">
                     <td className="py-2.5 px-4 font-semibold text-slate-800 border-r border-slate-200 flex items-center gap-2">

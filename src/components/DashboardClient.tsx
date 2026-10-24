@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   LogOut,
@@ -35,6 +35,8 @@ import {
   Filter,
   Table2,
   MapPin,
+  Menu,
+  X,
 } from "lucide-react";
 import {
   GROUP_CODES,
@@ -178,6 +180,51 @@ function RowParcelIcon({ index }: { index: number }) {
 export default function DashboardClient({ initialUser }: DashboardClientProps) {
   const router = useRouter();
   const [user] = useState<SessionUser>(initialUser);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const mobileQuery = window.matchMedia("(max-width: 1023px)");
+    const previousOverflow = document.body.style.overflow;
+    const syncMenu = () => {
+      document.body.style.overflow = mobileQuery.matches ? "hidden" : previousOverflow;
+    };
+    syncMenu();
+    mobileQuery.addEventListener("change", syncMenu);
+    if (mobileQuery.matches) sidebarRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+      if (event.key === "Tab" && mobileQuery.matches) {
+        const buttons = sidebarRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+        if (!buttons?.length) return;
+        const first = buttons[0];
+        const last = buttons[buttons.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      mobileQuery.removeEventListener("change", syncMenu);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    menuButtonRef.current?.focus();
+  };
   const [activeGroup, setActiveGroup] = useState<GroupCode>("GRUP-1");
 
   // Filtre ve Sayfalama Durumları
@@ -557,7 +604,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
       {toast && (
         <div
           role="status"
-          className={`fixed bottom-5 right-5 z-50 max-w-md px-4 py-3 rounded-xl shadow-lg border flex items-center gap-2.5 text-xs font-medium transition-all ${
+          className={`fixed bottom-5 left-3 right-3 sm:left-auto sm:right-5 z-50 max-w-md px-4 py-3 rounded-xl shadow-lg border flex items-center gap-2.5 text-xs font-medium transition-all ${
             toast.type === "success"
               ? "bg-emerald-950 text-white border-emerald-800"
               : "bg-red-950 text-white border-red-800"
@@ -573,7 +620,11 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
       )}
 
       {/* SOL KOYU LACİVERT KURUMSAL MENÜ (SIDEBAR - Görsel 2 ile Birebir) */}
-      <aside className="w-60 shrink-0 bg-[#061126] text-white flex flex-col justify-between relative overflow-hidden select-none border-r border-slate-800/60">
+      {isMenuOpen && <div onClick={closeMenu} aria-hidden="true" className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden" />}
+      <aside id="workspace-menu" ref={sidebarRef} aria-label="Çalışma alanı menüsü" className={`${isMenuOpen ? "flex" : "hidden"} fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw] lg:sticky lg:top-0 lg:w-60 h-dvh shrink-0 bg-[#061126] text-white flex-col overflow-y-auto overscroll-contain select-none border-r border-slate-800/60`}>
+        <button type="button" onClick={closeMenu} aria-label="Menüyü kapat" className="absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white focus-visible:outline-2 focus-visible:outline-blue-400">
+          <X className="h-5 w-5" />
+        </button>
         {/* Alt Topografik Kontur Çizgileri Süslemesi */}
         <svg
           viewBox="0 0 240 320"
@@ -632,7 +683,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
             <nav className="space-y-1">
               <button
                 type="button"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); closeMenu(); }}
                 className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#1d4ed8] text-white text-xs font-semibold shadow-md shadow-blue-600/25 cursor-pointer transition-all"
               >
                 <Home className="w-4 h-4 shrink-0" />
@@ -642,7 +693,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
               {permissions.canViewAudit && (
                 <button
                   type="button"
-                  onClick={() => setIsAuditModalOpen(true)}
+                  onClick={() => { closeMenu(); setIsAuditModalOpen(true); }}
                   className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/70 text-xs font-medium cursor-pointer transition-colors"
                 >
                   <History className="w-4 h-4 text-slate-400 shrink-0" />
@@ -654,7 +705,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
                 <>
                   <button
                     type="button"
-                    onClick={() => setIsImportModalOpen(true)}
+                    onClick={() => { closeMenu(); setIsImportModalOpen(true); }}
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/70 text-xs font-medium cursor-pointer transition-colors"
                   >
                     <Upload className="w-4 h-4 text-slate-400 shrink-0" />
@@ -663,7 +714,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
 
                   <button
                     type="button"
-                    onClick={() => setIsUserModalOpen(true)}
+                    onClick={() => { closeMenu(); setIsUserModalOpen(true); }}
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/70 text-xs font-medium cursor-pointer transition-colors"
                   >
                     <Users className="w-4 h-4 text-slate-400 shrink-0" />
@@ -676,7 +727,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
         </div>
 
         {/* Alt Kullanıcı Profili ve Çıkış */}
-        <div className="relative z-10 p-4 border-t border-slate-800/80 space-y-3 bg-[#061126]/90 backdrop-blur-xs">
+        <div className="relative z-10 p-4 border-b border-slate-800/80 space-y-3 bg-[#061126]/90 backdrop-blur-xs order-first mt-16">
           <div className="flex items-center gap-3 px-1">
             <div className="relative">
               <div className="w-9 h-9 rounded-full bg-[#1d4ed8] text-white font-bold text-sm flex items-center justify-center shadow-sm">
@@ -720,8 +771,11 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
       {/* SAĞ ANA ÇALIŞMA ALANI (Görsel 2 ile Birebir + Grafik Analizi) */}
       <div className="flex-1 min-w-0 bg-[#f4f7fb] lg:rounded-l-[28px] overflow-hidden flex flex-col">
         {/* Üst Gezinti (Breadcrumb) ve Aksiyon Çubuğu */}
-        <header className="px-5 sm:px-8 pt-5 pb-3 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+        <header className="px-3 sm:px-8 pt-4 pb-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+            <button ref={menuButtonRef} type="button" onClick={() => setIsMenuOpen((open) => !open)} aria-label={isMenuOpen ? "Menüyü kapat" : "Menüyü aç"} aria-expanded={isMenuOpen} aria-controls="workspace-menu" className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-600">
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
             <Home className="w-3.5 h-3.5 text-slate-600" />
             <span className="text-slate-300">&gt;</span>
             <span>Çalışma alanı</span>
@@ -729,7 +783,14 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
             <strong className="text-slate-900 font-bold">{activeGroup}</strong>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2" title={`${user.fullName} — ${user.roleName}`}>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-xs font-bold text-white">{user.fullName.charAt(0).toUpperCase()}</span>
+              <div className="min-w-0">
+                <span className="block max-w-[180px] truncate text-xs font-bold text-slate-900">{user.fullName}</span>
+                <span className="block text-[11px] text-slate-500">{user.roleCode === "MTCHARITA" ? "Yönetici" : user.roleName}</span>
+              </div>
+            </div>
             {/* Yetki Rozeti */}
             <span
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border ${
@@ -828,7 +889,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
         </header>
 
         {/* Ana İçerik Akışı */}
-        <main className="flex-1 px-5 sm:px-8 pb-8 space-y-4 max-w-[1600px] w-full mx-auto">
+        <main className="flex-1 min-w-0 px-3 sm:px-8 pb-8 space-y-4 max-w-[1600px] w-full mx-auto">
           {/* 1. ÜST KART: Kadastro Proje Takibi Başlığı + Sağ Harita Çizimi + 4 Grup Sekmesi */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
             {/* Harita İllüstrasyonlu Başlık Alanı */}
@@ -1051,7 +1112,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
                   }}
                 />
               </div>
-              <div className="flex items-center justify-between text-xs text-slate-500">
+              <div className="flex flex-wrap gap-2 items-center justify-between text-xs text-slate-500">
                 <span>
                   Tamamlanan:{" "}
                   <strong className="text-slate-900 font-bold">
@@ -1081,7 +1142,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
             <div className="px-5 py-4 border-b border-slate-200/80 space-y-3.5">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
                 {/* Sol: Başlık ve Kayıt Sayısı Rozeti */}
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <Table2 className="w-4 h-4" />
                   </div>
@@ -1330,7 +1391,7 @@ export default function DashboardClient({ initialUser }: DashboardClientProps) {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto max-h-[620px] overflow-y-auto relative">
+                  <div className="overflow-x-auto max-h-[60dvh] sm:max-h-[620px] overflow-y-auto relative" tabIndex={0} aria-label="Kadastro kayıtları, tüm sütunlar için yatay kaydırın">
                   <table className="w-full border-collapse text-xs">
                     <thead className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-xs text-slate-600 border-b border-slate-200">
                       <tr>
